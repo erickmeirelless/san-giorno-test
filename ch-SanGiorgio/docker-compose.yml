@@ -1,0 +1,55 @@
+version: '3.7'
+services:
+  localstack:
+    image: 'localstack/localstack'
+    container_name: 'localstack'
+    environment:
+      - SERVICES=sqs
+      - DEFAULT_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+    ports:
+      - '4566:4566'
+    networks:
+      - localstack-net
+
+  sqs-setup:
+    image: amazon/aws-cli
+    depends_on:
+      - localstack
+    entrypoint: >
+      /bin/sh -c "
+      echo Waiting for LocalStack to be ready...;
+      until nc -z localstack 4566; do
+        sleep 1;
+      done;
+      echo LocalStack is ready, creating the SQS queues...;
+      aws --endpoint-url=http://localstack:4566 sqs create-queue --queue-name queue-total;
+      aws --endpoint-url=http://localstack:4566 sqs create-queue --queue-name queue-partial;
+      aws --endpoint-url=http://localstack:4566 sqs create-queue --queue-name queue-over;
+      echo SQS queues created successfully."
+    networks:
+      - localstack-net
+
+  postgres:
+    image: 'postgres:latest'
+    container_name: 'meu-postgres'
+    environment:
+      - POSTGRES_DB=testdb
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD=test
+    ports:
+      - '5432:5432'
+    volumes:
+      - meu-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - localstack-net
+
+volumes:
+  meu-db-data:
+
+networks:
+  localstack-net:
+    driver: bridge

@@ -1,0 +1,21 @@
+spring:
+  profiles:
+    active: test
+  datasource:
+    url: jdbc:tc:postgresql:13.2:///testdb
+    username: test
+    password: test
+  jpa:
+    hibernate:
+      ddl-auto: update
+cloud:
+  aws:
+    region:
+      static: us-east-1
+    stack:
+      auto: false
+    credentials:
+      accessKey: test
+      secretKey: test
+    sqs:
+      endpoint: http://localhost:4566
